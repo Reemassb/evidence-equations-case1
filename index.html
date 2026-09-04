@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Intersection Collision — Evidence &amp; Equations #1</title>
+<style>
+:root{
+  color-scheme:dark;
+  --base:#12161c; --panel:#1b212a; --panel-2:#222a35; --line:#2f3a47;
+  --chalk:#e9e7e2; --steel:#8593a3; --amber:#e8a33d; --amber-dim:#8a6427;
+  --red:#d1544b; --green:#5fa771;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--base)}
+#app{background:var(--base);min-height:100vh;color:var(--chalk)}
+body{background:var(--base);color:var(--chalk);font-family:var(--sans);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.wrap{max-width:960px;margin:0 auto;padding:20px 18px 80px}
+h1,h2,h3{font-weight:600;letter-spacing:-.015em;margin:0}
+button{font-family:inherit;font-size:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--amber);outline-offset:3px;border-radius:3px}
+.hide{display:none !important}
+
+/* ---- top bar ---- */
+.bar{display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--line);padding:12px 0;margin-bottom:18px;flex-wrap:wrap}
+.bar .case{font-family:var(--mono);font-size:12px;color:var(--steel);letter-spacing:.04em}
+.bar .team{font-size:13px}
+.bar .spacer{flex:1}
+.iconbtn{background:transparent;border:1px solid var(--line);color:var(--steel);border-radius:6px;padding:5px 11px;font-size:12.5px}
+.iconbtn:hover{border-color:var(--amber-dim);color:var(--chalk)}
+
+/* ---- credibility ---- */
+.cred{display:flex;align-items:center;gap:10px;margin-bottom:22px;flex-wrap:wrap}
+.cred .lbl{font-size:13px;color:var(--steel);flex:none}
+.credbar{flex:1;min-width:150px;height:7px;background:var(--panel-2);border-radius:4px;overflow:hidden}
+.credfill{height:100%;width:100%;background:var(--green);transition:width .5s ease,background .5s ease}
+.credfill.mid{background:var(--amber)}
+.credfill.low{background:var(--red)}
+.cred .num{font-family:var(--mono);font-size:13px;color:var(--chalk);flex:none;min-width:42px;text-align:right}
+.shake{animation:sh .35s}
+@keyframes sh{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+/* ---- title ---- */
+.title-stamp{font-family:var(--mono);font-size:12px;color:var(--amber);letter-spacing:.16em;margin-bottom:18px}
+.title-main{font-size:clamp(34px,7vw,58px);line-height:1.02;letter-spacing:-.03em}
+.hero{margin:26px 0 4px;border:1px solid var(--line);border-radius:12px;background:#0d1117;padding:0;overflow:hidden;position:relative}
+.hero svg{display:block;width:100%;height:auto}
+.h-suv{animation:h-drive 1.35s .25s cubic-bezier(.2,.7,.3,1) both}
+.h-sedan{animation:h-shunt .25s 1.6s ease-out both}
+.h-skid line{stroke-dasharray:290;stroke-dashoffset:290;animation:h-lay 1.15s .45s ease-out forwards}
+.h-burst{opacity:0;transform-box:fill-box;transform-origin:center;animation:h-flash 1s 1.58s ease-out forwards}
+.h-lbl{opacity:0;animation:h-fade .9s 2.2s ease-out forwards}
+.h-scan{animation:h-sweep 2.6s 2.5s cubic-bezier(.4,0,.6,1) both}
+.h-lamp{animation:h-pulse 2.4s 2s ease-in-out infinite}
+@keyframes h-drive{from{transform:translateX(-360px)}to{transform:translateX(0)}}
+@keyframes h-shunt{from{transform:translateX(0)}to{transform:translateX(12px)}}
+@keyframes h-lay{to{stroke-dashoffset:0}}
+@keyframes h-flash{0%{opacity:0;transform:scale(.3)}25%{opacity:1;transform:scale(1.25)}100%{opacity:.9;transform:scale(1)}}
+@keyframes h-fade{to{opacity:1}}
+@keyframes h-sweep{from{transform:translateX(-80px)}to{transform:translateX(760px)}}
+@keyframes h-pulse{0%,100%{opacity:.45}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){
+  .h-suv,.h-sedan,.h-burst,.h-lbl{opacity:1 !important;transform:none !important}
+  .h-skid line{stroke-dashoffset:0 !important}
+  .h-scan{display:none}
+}
+.title-sub{color:var(--steel);max-width:56ch;margin-top:18px;font-size:17px}
+.brief{border-left:2px solid var(--amber-dim);padding:2px 0 2px 18px;margin:28px 0;max-width:60ch}
+.brief p{margin:0 0 12px}.brief p:last-child{margin:0}
+.quote{color:var(--steel);font-style:italic}
+.setup{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-top:34px}
+label.fl{display:block;font-size:13px;color:var(--steel);margin-bottom:6px}
+input[type=text],textarea{background:var(--panel);border:1px solid var(--line);color:var(--chalk);border-radius:6px;padding:10px 12px;font-family:inherit;font-size:15px;width:100%}
+input[type=text]:focus,textarea:focus{border-color:var(--amber);outline:none}
+.field{flex:1;min-width:190px}
+.cta{background:var(--amber);color:#1a1206;border:0;border-radius:6px;padding:13px 26px;font-size:16px;font-weight:600;margin-top:26px}
+.cta:hover{filter:brightness(1.08)}
+.cta:disabled{opacity:.4;cursor:not-allowed}
+.ghost{background:transparent;color:var(--chalk);border:1px solid var(--line);border-radius:6px;padding:11px 20px;font-size:15px}
+.ghost:hover{border-color:var(--amber-dim)}
+
+/* ---- scene ---- */
+.scene{background:#0d1117;border:1px solid var(--line);border-radius:10px;padding:0;margin-bottom:22px;overflow:hidden}
+.scene svg{display:block;width:100%;height:auto}
+.dim{stroke:var(--steel);stroke-width:1}
+.dim-txt{fill:var(--steel);font-family:var(--mono);font-size:11px}
+.hot .dim{stroke:var(--amber);stroke-width:1.6}
+.hot .dim-txt{fill:var(--amber)}
+.hot .skid{stroke:var(--amber)}
+
+/* ---- evidence ---- */
+.sect-head{display:flex;align-items:baseline;gap:12px;margin:0 0 14px;flex-wrap:wrap}
+.sect-head h2{font-size:20px}
+.sect-head .note{font-size:13px;color:var(--steel)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.ev{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:15px 16px;text-align:left;color:var(--chalk);transition:border-color .18s,transform .18s}
+.ev:hover{border-color:var(--amber-dim);transform:translateY(-2px)}
+.ev .tag{font-family:var(--mono);font-size:11px;color:var(--steel)}
+.ev .nm{display:block;font-size:16px;font-weight:600;margin:5px 0 4px}
+.ev .hint{font-size:13px;color:var(--steel)}
+.ev.seen{border-color:var(--amber-dim)}
+.ev.seen .tag{color:var(--amber)}
+.ev.sealed{opacity:.5;cursor:not-allowed}
+.ev.sealed:hover{transform:none;border-color:var(--line)}
+.ev.justin{animation:pop .6s}
+@keyframes pop{0%{transform:scale(.94);border-color:var(--amber)}60%{transform:scale(1.02);border-color:var(--amber)}100%{transform:scale(1)}}
+
+.newsflash{background:#2b2517;border:1px solid var(--amber);border-radius:8px;padding:15px 18px;margin-bottom:16px}
+.newsflash .t{font-family:var(--mono);font-size:11px;color:var(--amber);letter-spacing:.12em}
+.newsflash p{margin:6px 0 0;font-size:15px}
+
+.sheet{background:var(--panel);border:1px solid var(--amber-dim);border-radius:8px;padding:20px 22px;margin-bottom:22px}
+.sheet h3{font-size:18px;margin-bottom:4px}
+.sheet .tag{font-family:var(--mono);font-size:11px;color:var(--amber)}
+.datarow{display:flex;justify-content:space-between;gap:16px;border-bottom:1px dashed var(--line);padding:9px 0;font-size:15px}
+.datarow:last-of-type{border-bottom:0}
+.datarow .v{font-family:var(--mono);color:var(--amber);white-space:nowrap}
+.sheet p{color:var(--steel);font-size:14.5px;margin:14px 0 0;max-width:62ch}
+
+/* ---- stages ---- */
+.stage{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:20px 22px;margin-bottom:12px}
+.stage.locked{opacity:.42}
+.stage.active{border-color:var(--amber)}
+.stage.done{border-color:var(--green)}
+.stage-top{display:flex;align-items:baseline;gap:12px}
+.stage-top .n{font-family:var(--mono);font-size:12px;color:var(--steel);flex:none}
+.stage-top h3{font-size:16.5px}
+.stage .q{margin:12px 0 16px;max-width:62ch}
+.answer{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.answer input{width:150px}
+.unit{font-family:var(--mono);color:var(--steel);font-size:14px}
+.feedback{margin-top:13px;font-size:14.5px;display:flex;gap:9px;max-width:62ch}
+.feedback .mk{font-family:var(--mono);flex:none;font-weight:700}
+.f-ok{color:var(--green)}.f-no{color:var(--red)}.f-hint{color:var(--amber)}
+.solved{font-family:var(--mono);color:var(--green);font-size:14px}
+
+/* ---- choices / cross-exam ---- */
+.choice{display:block;width:100%;text-align:left;background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:13px 16px;color:var(--chalk);margin-bottom:9px;font-size:15px}
+.choice:hover{border-color:var(--amber-dim)}
+.choice[aria-pressed=true]{border-color:var(--amber);background:#2b2517}
+.choice.ok{border-color:var(--green);background:#1c2a20}
+.choice.bad{border-color:var(--red);background:#2a1b1a}
+.choice:disabled{cursor:default}
+textarea{min-height:130px;resize:vertical;line-height:1.5}
+.count{font-size:12.5px;color:var(--steel);margin-top:6px;font-family:var(--mono)}
+.lawyer{border-left:2px solid var(--red);padding-left:16px;margin:0 0 16px;max-width:62ch}
+.lawyer .who{font-family:var(--mono);font-size:11px;color:var(--red);letter-spacing:.1em}
+.lawyer p{margin:6px 0 0;font-style:italic;color:var(--chalk)}
+
+/* ---- report ---- */
+.report{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:26px}
+.report h2{font-size:22px;margin-bottom:2px}
+.rmeta{font-family:var(--mono);font-size:12.5px;color:var(--steel);margin-bottom:20px}
+.rrow{display:flex;justify-content:space-between;gap:14px;border-bottom:1px solid var(--line);padding:11px 0;font-size:15px;align-items:baseline}
+.rrow .val{font-family:var(--mono);color:var(--amber);text-align:right;white-space:nowrap}
+.rrow .att{font-family:var(--mono);font-size:12px;color:var(--steel)}
+.rblock{margin-top:22px}
+.rblock h3{font-size:15px;margin-bottom:8px}
+.rblock .body{color:var(--steel);font-size:15px;white-space:pre-wrap;max-width:66ch}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}
+.rankbox{border:2px solid var(--amber);border-radius:8px;padding:20px 22px;margin-bottom:22px;text-align:center}
+.rankbox .sc{font-family:var(--mono);font-size:44px;color:var(--amber);line-height:1}
+.rankbox .rk{font-size:20px;font-weight:600;margin-top:6px}
+.rankbox .of{font-size:13px;color:var(--steel);margin-top:4px}
+.stamp{animation:stampin .5s ease-out}
+@keyframes stampin{0%{transform:scale(2.6) rotate(-9deg);opacity:0}70%{transform:scale(.96) rotate(1deg);opacity:1}100%{transform:scale(1) rotate(0)}}
+
+/* ---- replay + camera viewer ---- */
+.rp-ctl{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.rp-read{font-family:var(--mono);font-size:13px;color:var(--amber);padding:7px 11px;border:1px solid var(--line);border-radius:6px;white-space:nowrap}
+.ghost[aria-pressed=true]{border-color:var(--amber);color:var(--amber)}
+.cam-view{margin-top:16px;background:#0c0f13;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.cam-view svg{display:block;width:100%;height:auto}
+.cam-ctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.cam-ctl input[type=range]{flex:1;min-width:140px;accent-color:var(--amber)}
+
+@media (max-width:520px){.wrap{padding:16px 14px 60px}.datarow{flex-direction:column;gap:2px}}
+@media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important}}
+@media print{
+  html,body,#app{background:#fff;color:#000}
+  .wrap{max-width:none;padding:0}
+  .bar,.actions,.noprint{display:none !important}
+  .report{border:0;padding:0;background:#fff}
+  .rrow{border-bottom:1px solid #bbb}
+  .rrow .val,.rmeta,.rrow .att,.rblock .body{color:#000}
+  .rankbox{border:2px solid #000}
+  .rankbox .sc{color:#000}
+  @page{margin:16mm}
+}
+</style>
+</head>
+<body>
+<div id="app">
+<div class="wrap">
+
+<!-- ================= TITLE ================= -->
+<section id="s-title">
+  <div class="title-stamp">Evidence &amp; Equations · Case 1</div>
+  <h1 class="title-main">The Intersection<br>Collision</h1>
+  <p class="title-sub">A silver SUV hit a stationary sedan at a red light. The driver says he was doing the speed limit. Your reconstruction decides whether that holds up.</p>
+
+  <div class="hero" aria-hidden="true">
+   <svg viewBox="0 0 700 250" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="hsky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#0d1117"/><stop offset=".62" stop-color="#141a22"/>
+        <stop offset=".82" stop-color="#241d12"/><stop offset="1" stop-color="#2e2312"/>
+      </linearGradient>
+      <radialGradient id="hsun" cx=".5" cy=".5" r=".5">
+        <stop offset="0" stop-color="#e8a33d" stop-opacity=".38"/>
+        <stop offset="1" stop-color="#e8a33d" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="hroad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#20262f"/><stop offset="1" stop-color="#151a21"/>
+      </linearGradient>
+      <linearGradient id="hscan" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#e8a33d" stop-opacity="0"/>
+        <stop offset=".5" stop-color="#e8a33d" stop-opacity=".28"/>
+        <stop offset="1" stop-color="#e8a33d" stop-opacity="0"/>
+      </linearGradient>
+      <filter id="hglow" x="-80%" y="-80%" width="260%" height="260%">
+        <feGaussianBlur stdDeviation="5" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <pattern id="hgrid" width="30" height="30" patternUnits="userSpaceOnUse">
+        <path d="M30 0H0V30" fill="none" stroke="#e9e7e2" stroke-opacity=".035"/>
+      </pattern>
+    </defs>
+
+    <rect width="700" height="250" fill="url(#hsky)"/>
+    <ellipse cx="560" cy="196" rx="300" ry="120" fill="url(#hsun)"/>
+    <rect width="700" height="250" fill="url(#hgrid)"/>
+
+    <!-- road -->
+    <rect x="0" y="188" width="700" height="62" fill="url(#hroad)"/>
+    <line x1="0" y1="188" x2="700" y2="188" stroke="#39434f"/>
+    <line x1="0" y1="221" x2="700" y2="221" stroke="#3a4552" stroke-width="2" stroke-dasharray="22 18" opacity=".55"/>
+
+    <!-- traffic signal -->
+    <line x1="641" y1="188" x2="641" y2="52" stroke="#39434f" stroke-width="5"/>
+    <rect x="628" y="34" width="26" height="62" rx="7" fill="#1b212a" stroke="#39434f"/>
+    <g class="h-lamp"><circle cx="641" cy="50" r="7" fill="#ff5d52" filter="url(#hglow)"/></g>
+    <circle cx="641" cy="66" r="6" fill="#2a323c"/>
+    <circle cx="641" cy="82" r="6" fill="#2a323c"/>
+
+    <!-- skid marks -->
+    <g class="h-skid">
+      <line x1="176" y1="182" x2="450" y2="182" stroke="#0a0c0f" stroke-width="6" stroke-linecap="round"/>
+      <line x1="176" y1="173" x2="450" y2="173" stroke="#0a0c0f" stroke-width="5" stroke-linecap="round" opacity=".8"/>
+    </g>
+
+    <!-- sedan (stationary at the light) -->
+    <g class="h-sedan">
+      <rect x="472" y="150" width="118" height="26" rx="9" fill="#4f6d8c"/>
+      <path d="M496 152 q6 -18 26 -18 h34 q18 0 24 18 z" fill="#42597a"/>
+      <path d="M503 150 q5 -13 20 -13 h12 v13 z" fill="#39434f"/>
+      <path d="M541 137 h13 q13 0 18 13 h-31 z" fill="#39434f"/>
+      <circle cx="497" cy="177" r="12" fill="#10141a"/><circle cx="497" cy="177" r="5" fill="#39434f"/>
+      <circle cx="566" cy="177" r="12" fill="#10141a"/><circle cx="566" cy="177" r="5" fill="#39434f"/>
+      <circle cx="586" cy="163" r="3.5" fill="#ff5d52" opacity=".9"/>
+    </g>
+
+    <!-- SUV -->
+    <g class="h-suv">
+      <rect x="316" y="140" width="140" height="38" rx="10" fill="#9aa4b0"/>
+      <path d="M334 142 q7 -22 30 -22 h56 q22 0 30 22 z" fill="#87919e"/>
+      <path d="M342 140 q6 -16 24 -16 h16 v16 z" fill="#3a444f"/>
+      <path d="M390 124 h24 q17 0 23 16 h-47 z" fill="#3a444f"/>
+      <circle cx="344" cy="179" r="14" fill="#10141a"/><circle cx="344" cy="179" r="6" fill="#4a5460"/>
+      <circle cx="428" cy="179" r="14" fill="#10141a"/><circle cx="428" cy="179" r="6" fill="#4a5460"/>
+      <rect x="452" y="150" width="5" height="12" rx="2" fill="#e8d9a0" opacity=".85"/>
+    </g>
+
+    <!-- impact -->
+    <g class="h-burst" filter="url(#hglow)">
+      <path d="M462 150 l17 -12 l-4 12 l17 -8 l-8 12 l16 0 l-16 8 l8 10 l-17 -6 l4 12 l-17 -13 l-13 11 l3 -12 l-15 5 l8 -11 l-14 -2 l14 -6 l-7 -10 l15 6 l-2 -13 z" fill="#e8a33d"/>
+    </g>
+
+    <!-- measurement overlay -->
+    <g class="h-lbl" font-family="ui-monospace,Menlo,Consolas,monospace" font-size="12" fill="#8593a3">
+      <line x1="176" y1="236" x2="450" y2="236" stroke="#8593a3"/>
+      <line x1="176" y1="230" x2="176" y2="242" stroke="#8593a3"/>
+      <line x1="450" y1="230" x2="450" y2="242" stroke="#8593a3"/>
+      <rect x="266" y="228" width="94" height="16" fill="#0d1117"/>
+      <text x="313" y="240" text-anchor="middle" fill="#e8a33d">skid marks</text>
+      <line x1="462" y1="118" x2="462" y2="142" stroke="#8593a3" stroke-dasharray="3 3"/>
+      <text x="462" y="110" text-anchor="middle">point of impact</text>
+      <text x="530" y="126" text-anchor="middle" fill="#8593a3">stationary at red</text>
+      <line x1="530" y1="130" x2="530" y2="144" stroke="#8593a3" stroke-dasharray="3 3"/>
+      <text x="20" y="26" fill="#e8a33d" letter-spacing="3">RECONSTRUCTION IN PROGRESS</text>
+    </g>
+
+    <!-- forensic sweep -->
+    <rect class="h-scan" x="-40" y="0" width="80" height="250" fill="url(#hscan)"/>
+   </svg>
+  </div>
+
+  <div class="brief">
+    <p>At 07:42 on a clear Tuesday morning, a silver SUV struck the rear of a sedan waiting at a red light on Al-Mutanabbi Street. Both drivers were treated for minor injuries.</p>
+    <p class="quote">"I was doing fifty, same as always. The other car pulled out in front of me — I had no time."</p>
+    <p>You have been retained as the reconstruction expert. Work the evidence, reach a conclusion, and be ready to defend it — the driver's lawyer will get to question you before this is over.</p>
+  </div>
+
+  <div class="setup">
+    <div class="field">
+      <label class="fl" for="team">Investigator or team name</label>
+      <input type="text" id="team" placeholder="e.g. Team 3 — Sara &amp; Noura" autocomplete="off">
+    </div>
+  </div>
+  <button class="cta" id="open-case" disabled>Take the case</button>
+  <p class="count" id="mode-note">Enter a name to begin.</p>
+</section>
+
+<!-- ================= INVESTIGATION ================= -->
+<section id="s-invest" class="hide">
+  <div class="bar">
+    <span class="case">CASE 1 · INTERSECTION COLLISION</span>
+    <span class="team" id="bar-team"></span>
+    <span class="spacer"></span>
+    <button class="iconbtn" id="snd">Sound on</button>
+    <button class="iconbtn" id="restart">Restart</button>
+  </div>
+
+  <div class="cred">
+    <span class="lbl">Expert credibility</span>
+    <div class="credbar" id="credbar"><div class="credfill" id="credfill"></div></div>
+    <span class="num" id="crednum">100</span>
+  </div>
+
+  <div class="scene" id="scene"></div>
+
+  <div id="flash"></div>
+
+  <div class="sect-head">
+    <h2>Evidence</h2>
+    <span class="note" id="ev-count">0 of 7 examined</span>
+  </div>
+  <div class="grid" id="ev-grid"></div>
+  <div id="ev-detail" style="margin-top:22px"></div>
+
+  <div class="sect-head" style="margin-top:34px">
+    <h2>Reconstruction</h2>
+    <span class="note">Work the calculations in order.</span>
+  </div>
+  <div id="stages"></div>
+
+  <div id="replay"></div>
+
+  <div id="verdict-wrap" class="hide" style="margin-top:34px">
+    <div class="sect-head"><h2>Your conclusion</h2></div>
+    <div class="stage active">
+      <p class="q">Based on your reconstruction, what do you conclude about the SUV driver's speed?</p>
+      <div id="choices"></div>
+
+      <label class="fl" style="margin-top:22px" id="citelbl">Which evidence supports that claim? Select every item you are relying on — you may be asked to defend the choice.</label>
+      <div id="cites" role="group" aria-labelledby="citelbl"></div>
+      <p class="count" id="citec">0 selected</p>
+      <div class="feedback" id="citefb"></div>
+
+      <label class="fl" for="just" style="margin-top:18px">State your claim, cite the evidence you used, and explain the reasoning that connects them.</label>
+      <textarea id="just" placeholder="The SUV was travelling at approximately..."></textarea>
+      <p class="count" id="wc">0 words — at least 40 needed</p>
+      <button class="cta" id="submit-v" disabled>File your conclusion</button>
+    </div>
+  </div>
+
+  <div id="xexam-wrap" class="hide" style="margin-top:34px">
+    <div class="sect-head"><h2>Cross-examination</h2>
+      <span class="note" id="xprog"></span></div>
+    <div class="stage active" id="xbox"></div>
+  </div>
+</section>
+
+<!-- ================= REPORT ================= -->
+<section id="s-report" class="hide">
+  <div class="bar noprint">
+    <span class="case">CASE 1 · REPORT</span>
+    <span class="spacer"></span>
+    <button class="iconbtn" id="back-inv">Back to case</button>
+  </div>
+  <div class="report" id="report"></div>
+  <div class="actions noprint">
+    <button class="cta" id="print">Print report</button>
+    <button class="ghost" id="dl">Download as text</button>
+  </div>
+</section>
+
+</div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ===== seeded case generator =====
+   Every team gets its own physically consistent case. The friction pair
+   (0.75 / 0.40) is fixed because the whole activity turns on that fork;
+   everything else is generated and constraint-checked. */
+var G=9.81,MU_DRY=0.75,MU_WET=0.40;
+var D_SKID,D_SLIDE,M_SUV,M_SEDAN,M_TOT,CAM_D,CAM_T,LIMIT,DRY,WET,CAM_V,CAM_F1,CAM_F2,CAM_FMAX;
+var WETCASE,COND,TRUEK,FALSEK,MU_TRUE;
+var CAM_FPS=60;
+
+function fnv(str){var h=2166136261>>>0;
+  for(var i=0;i<str.length;i++){h^=str.charCodeAt(i);h=(h+((h<<1)+(h<<4)+(h<<7)+(h<<8)+(h<<24)))>>>0;}
+  return h>>>0;}
+function rngFrom(seed){var s=(seed>>>0)||1;
+  return function(){s^=s<<13;s>>>=0;s^=s>>>17;s^=s<<5;s>>>=0;return s/4294967296;};}
+function gpick(r,a){return a[Math.floor(r()*a.length)];}
+function keyFor(mu,skid,slide,mS,mTot){
+  var vp=Math.sqrt(2*mu*G*slide),vi=mTot*vp/mS,a=mu*G,v0=Math.sqrt(vi*vi+2*a*skid);
+  return{vp:vp,vi:vi,a:a,v0:v0,kmh:v0*3.6};}
+
+var FALLBACK={skid:18,slide:8.5,mS:1800,mC:1200,span:25,limit:50,wet:false};
+function buildCase(seedStr){
+  var r=rngFrom(fnv(String(seedStr||"case")));
+  var wetCase=r()<0.5;                       /* road condition decided first */
+  for(var t=0;t<9000;t++){
+    var skid=12+Math.floor(r()*22),
+        slide=Math.round((5+Math.floor(r()*17)*0.5)*10)/10,
+        mS=gpick(r,[1600,1700,1800,1900,2000,2100,2200]),
+        mC=gpick(r,[900,1000,1100,1200,1300,1400]),
+        span=gpick(r,[20,22,25,28,30,32]),
+        limit=gpick(r,[40,50,60]);
+    if(mC>=mS-300)continue;
+    var tot=mS+mC,
+        dry=keyFor(MU_DRY,skid,slide,mS,tot),
+        wet=keyFor(MU_WET,skid,slide,mS,tot),
+        T=wetCase?wet:dry, F=wetCase?dry:wet,
+        frames=Math.round(span/T.v0*CAM_FPS),
+        camT=frames/CAM_FPS, camV=span/camT;
+    if(T.kmh<limit+22)continue;
+    if(T.kmh>135)continue;
+    if(Math.abs(camV-T.v0)/T.v0>0.025)continue;
+    if(Math.abs(camV-F.v0)/F.v0<0.18)continue;
+    if(frames<38||frames>115)continue;
+    if(T.vp<5.5||T.v0>37)continue;
+    if(Math.abs(T.kmh-F.kmh)<18)continue;
+    return{skid:skid,slide:slide,mS:mS,mC:mC,span:span,limit:limit,frames:frames,wet:wetCase};
+  }
+  return FALLBACK;
+}
+function applyCase(seedStr){
+  var c=buildCase(seedStr);
+  D_SKID=c.skid;D_SLIDE=c.slide;M_SUV=c.mS;M_SEDAN=c.mC;M_TOT=c.mS+c.mC;
+  CAM_D=c.span;LIMIT=c.limit;
+  DRY=keyFor(MU_DRY,D_SKID,D_SLIDE,M_SUV,M_TOT);
+  WET=keyFor(MU_WET,D_SKID,D_SLIDE,M_SUV,M_TOT);
+  WETCASE=!!c.wet;COND=WETCASE?"wet":"dry";
+  TRUEK=WETCASE?WET:DRY;FALSEK=WETCASE?DRY:WET;MU_TRUE=WETCASE?MU_WET:MU_DRY;
+  var fr=c.frames||Math.round(CAM_D/(c.wet?WET:DRY).v0*CAM_FPS);
+  CAM_T=fr/CAM_FPS;CAM_V=CAM_D/CAM_T;
+  CAM_F1=12;CAM_F2=CAM_F1+fr;CAM_FMAX=CAM_F2+15;
+  buildContent();
+}
+function n1(x){return (Math.round(x*10)/10).toFixed(1);}
+
+/* ===== state ===== */
+var S={team:"",seed:"",seen:{},stage:0,ans:{},att:{},mu:null,
+       verdict:null,cites:{},just:"",cred:100,x:0,xres:[],phase:"invest",done:false};
+var APP_VER="2.0";
+function caseFP(){return [APP_VER,D_SKID,D_SLIDE,M_SUV,M_SEDAN,CAM_D,LIMIT,COND].join("|");}
+var MEM={};
+function save(){try{S.fp=caseFP();localStorage.setItem("ee1g_v2",JSON.stringify(S));}catch(e){MEM.d=S;}}
+function load(){
+  try{
+    localStorage.removeItem("ee1g");           /* discard saves from earlier builds */
+    var r=localStorage.getItem("ee1g_v2");
+    if(r)return JSON.parse(r);
+  }catch(e){if(MEM.d)return MEM.d;}
+  return null;}
+function clearSave(){try{localStorage.removeItem("ee1g_v2");localStorage.removeItem("ee1g");}catch(e){delete MEM.d;}}
+
+/* ===== sound ===== */
+var soundOn=true,ac=null;
+function ctx(){if(!ac){try{ac=new(window.AudioContext||window.webkitAudioContext)();}catch(e){ac=false;}}return ac;}
+function tone(f,d,t,v,dl){if(!soundOn)return;var c=ctx();if(!c)return;
+  var s=c.currentTime+(dl||0),o=c.createOscillator(),g=c.createGain();
+  o.type=t||"sine";o.frequency.setValueAtTime(f,s);
+  g.gain.setValueAtTime(0.0001,s);g.gain.exponentialRampToValueAtTime(v||0.13,s+0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001,s+d);
+  o.connect(g);g.connect(c.destination);o.start(s);o.stop(s+d+0.03);}
+function sweep(f1,f2,d,v){if(!soundOn)return;var c=ctx();if(!c)return;
+  var s=c.currentTime,o=c.createOscillator(),g=c.createGain();
+  o.type="sine";o.frequency.setValueAtTime(f1,s);o.frequency.exponentialRampToValueAtTime(f2,s+d);
+  g.gain.setValueAtTime(v||0.1,s);g.gain.exponentialRampToValueAtTime(0.0001,s+d);
+  o.connect(g);g.connect(c.destination);o.start(s);o.stop(s+d+0.02);}
+function noise(d,v,cut){if(!soundOn)return;var c=ctx();if(!c)return;
+  var n=Math.floor(c.sampleRate*d),b=c.createBuffer(1,n,c.sampleRate),a=b.getChannelData(0);
+  for(var i=0;i<n;i++)a[i]=(Math.random()*2-1)*Math.pow(1-i/n,2.2);
+  var s=c.createBufferSource();s.buffer=b;
+  var f=c.createBiquadFilter();f.type="lowpass";f.frequency.value=cut||780;
+  var g=c.createGain();g.gain.value=v||0.15;
+  s.connect(f);f.connect(g);g.connect(c.destination);s.start();}
+var SFX={
+ open:function(){noise(0.16,0.13);tone(150,0.16,"sine",0.10);},
+ click:function(){tone(520,0.045,"triangle",0.05);},
+ right:function(){tone(587.33,0.13,"sine",0.12);tone(880,0.26,"sine",0.11,0.09);},
+ wrong:function(){tone(150,0.20,"sawtooth",0.07);tone(112,0.24,"sine",0.08,0.05);},
+ hint:function(){tone(392,0.10,"triangle",0.07);tone(466,0.14,"triangle",0.06,0.08);},
+ unlock:function(){tone(392,0.09,"sine",0.09);tone(523.25,0.09,"sine",0.09,0.075);tone(659.25,0.20,"sine",0.10,0.15);},
+ reveal:function(){noise(0.22,0.10,1400);tone(523.25,0.12,"sine",0.10);tone(659.25,0.12,"sine",0.10,0.1);
+   tone(783.99,0.14,"sine",0.10,0.2);tone(1046.5,0.42,"sine",0.11,0.3);},
+ credloss:function(){sweep(420,180,0.34,0.10);},
+ objection:function(){noise(0.10,0.12,500);tone(196,0.30,"sawtooth",0.08);},
+ stamp:function(){noise(0.13,0.22,420);tone(90,0.20,"sine",0.14);},
+ final:function(){noise(0.30,0.10);tone(196,0.55,"sine",0.13);tone(293.66,0.55,"sine",0.10,0.04);tone(392,0.60,"sine",0.09,0.09);}
+};
+
+/* ===== generated content (evidence, questions, options, cross-exam) ===== */
+var EV=[],CORE=[],CHOICES=[],XQ=[];
+function evAvailable(e){ return !e.sealed || S.stage>=4; }
+function stages(){return CORE.slice();}
+
+function buildContent(){
+var WX_ROWS,WX_NOTE;
+if(WETCASE){
+  WX_ROWS=[["Rainfall recorded","06:20 \u2013 07:38"],["Collision time","07:42"],["Relative humidity","91%"],
+    ["Officer\u2019s scene note","Standing water photographed in the gutter"],["Previous dry spell","Ended 06:20 same morning"]];
+  WX_NOTE="Read the times carefully. The station is 1.2 km from the scene, so treat it as strong evidence rather than proof \u2014 but the officer\u2019s photograph is taken at the scene itself.";
+}else{
+  WX_ROWS=[["Rainfall recorded","None in the preceding 52 hours"],["Collision time","07:42"],["Relative humidity","34%"],
+    ["Officer\u2019s scene note","Surface dry; light dust on the asphalt"],["Last precipitation","Two days earlier, 06:15"]];
+  WX_NOTE="Read the times carefully. Rain fell earlier in the week, but not recently enough to matter. The officer\u2019s note is taken at the scene itself.";
+}
+EV=[
+ {id:"skid",tag:"Item 01",nm:"Skid marks",hint:"Tyre deposits on the approach lane",
+  rows:[["Continuous braking marks, SUV lane",n1(D_SKID)+" m"],["Marks end at","Point of impact"],["Sedan skid marks","None recorded"]],
+  note:"The SUV braked hard for the full "+n1(D_SKID)+" m before impact. The sedan left no marks \u2014 it was not moving.",hot:"skid"},
+ {id:"road",tag:"Item 02",nm:"Road survey",hint:"Surface type and measured friction values",
+  rows:[["Surface","Asphalt, resurfaced March"],["Friction \u2014 dry surface","\u03bc = 0.75"],["Friction \u2014 wet surface","\u03bc = 0.40"],["Condition at 07:42","Not recorded \u2014 see Item 03"],["Posted speed limit",LIMIT+" km/h"]],
+  note:"Both coefficients were measured on this stretch of road. The survey does not record which one applied that morning \u2014 you will have to establish that from the weather log. Choose wrongly and every number after it is wrong too.",hot:null},
+ {id:"wx",tag:"Item 03",nm:"Weather log",hint:"Meteorological station, 1.2 km from the scene",
+  rows:WX_ROWS,
+  note:WX_NOTE,hot:null},
+ {id:"post",tag:"Item 04",nm:"Post-impact scene",hint:"Final rest positions",
+  rows:[["Vehicles came to rest","Locked together"],["Slide distance after impact",n1(D_SLIDE)+" m"],["Braking during slide","None \u2014 driver unconscious"]],
+  note:"After the collision the two vehicles moved as a single object, sliding "+n1(D_SLIDE)+" m before friction stopped them.",hot:"slide"},
+ {id:"reg",tag:"Item 05",nm:"Vehicle registrations",hint:"Kerb masses from the licensing database",
+  rows:[["Silver SUV",M_SUV+" kg"],["Sedan",M_SEDAN+" kg"],["Combined",M_TOT+" kg"]],
+  note:"Masses include the drivers. No cargo was recorded in either vehicle.",hot:null},
+ {id:"wit",tag:"Item 06",nm:"Witness statement",hint:"Pedestrian on the east corner",
+  rows:[["Witness","Pedestrian, east corner"],["Statement","\u201cThe sedan pulled out suddenly.\u201d"],["Signal state at 07:42","Red for 34 s before impact"]],
+  note:"Weigh this against the physical evidence. A statement is only as good as the measurements that support it.",hot:null},
+ {id:"cam",tag:"Item 07",nm:"Traffic camera",hint:"Sealed \u2014 awaiting release from the traffic authority",
+  sealed:true,
+  rows:[["Lamp post spacing (surveyed)",n1(CAM_D)+" m"],["Frame rate","60 fps"],["Section recorded","Before braking begins"],["Time to cross the gap","Measure it from the footage"]],
+  note:"This footage is an independent measurement. It relies on none of your calculations \u2014 which makes it the only real check you have on your answer. Scrub the frames and time the crossing yourself.",hot:"cam"}
+];
+
+CORE=[
+ {id:"vp",t:"Speed of the wreck immediately after impact",
+  q:"After the collision the two vehicles slid "+n1(D_SLIDE)+" m locked together before stopping. Using the friction coefficient you selected, find how fast they were moving the instant the impact ended.",
+  unit:"m/s",dry:TRUEK.vp,wet:FALSEK.vp,
+  h1:"What energy did the wreck have straight after impact, and where did all of it go while it slid?",
+  h2:"Set kinetic energy equal to the work done by friction: \u00bdmv\u00b2 = \u03bcmgd. The mass cancels."},
+ {id:"vi",t:"Speed of the SUV at the moment of impact",
+  q:"The sedan was stationary and the vehicles locked together on impact. Find how fast the SUV was travelling the instant before it struck.",
+  unit:"m/s",dry:TRUEK.vi,wet:FALSEK.vi,
+  h1:"Kinetic energy is lost in a collision like this. What quantity is still conserved?",
+  h2:"Momentum: m\u2081v = (m\u2081 + m\u2082)v_after. Rearrange for v."},
+ {id:"a",t:"Deceleration while braking",
+  q:"Find the magnitude of the SUV's deceleration during the "+n1(D_SKID)+" m of braking before impact.",
+  unit:"m/s\u00b2",dry:TRUEK.a,wet:FALSEK.a,
+  h1:"The only horizontal force slowing the SUV is friction. Write Newton's second law and see what cancels.",
+  h2:"F = \u03bcmg and F = ma, so a = \u03bcg."},
+ {id:"v0",t:"Speed before the driver braked",
+  q:"You know the SUV's speed at the end of the skid and its deceleration over "+n1(D_SKID)+" m. Find how fast it was going when the driver first hit the brakes \u2014 and give your answer in km/h, so it can be compared with the "+LIMIT+" km/h limit.",
+  unit:"km/h",dry:TRUEK.kmh,wet:FALSEK.kmh,
+  h1:"You have final speed, acceleration and distance, but no time. Which kinematic equation leaves time out? Convert to km/h once you have it.",
+  h2:"v\u00b2 = u\u00b2 + 2as, so u\u00b2 = v\u00b2 + 2a\u00d7"+n1(D_SKID)+". Then multiply the result in m/s by 3.6."}
+];
+
+var dK=Math.round(TRUEK.kmh),wK=Math.round(FALSEK.kmh);
+var otherWord=WETCASE?"dry":"wet",trueWord=WETCASE?"wet":"dry";
+CHOICES=[
+ {id:"a",t:"Roughly "+dK+" km/h \u2014 well above the "+LIMIT+" km/h limit.",correct:true},
+ {id:"b",t:"Roughly "+wK+" km/h \u2014 above the limit, but closer to the driver\u2019s account.",},
+ {id:"c",t:"Roughly "+LIMIT+" km/h. The driver's account is supported.",},
+ {id:"d",t:"The evidence is insufficient to determine the speed.",}
+];
+
+XQ=[
+ {q:"My client cannot recall the weather that morning. If the road had been "+otherWord+", your own method gives about "+wK+" km/h, not "+dK+". Your figure is therefore unreliable.",
+  opts:[
+   {t:"The traffic camera measured "+n1(CAM_V)+" m/s independently of any friction assumption, and that matches the "+trueWord+" calculation, not the "+otherWord+" one.",ok:true},
+   {t:"The weather log records the road as "+trueWord+", so the other coefficient does not apply."},
+   {t:"It makes no difference \u2014 both figures are above the limit anyway."},
+   {t:"Water on asphalt has no measurable effect on the coefficient of friction."}],
+  why:"Two of these are true statements, but only one is physics. The camera is an independent measurement, so it can arbitrate between the two friction paths. The weather log is a document, and \u2018still speeding\u2019 concedes the number instead of defending it."},
+ {q:"You used conservation of momentum. But everyone knows energy is destroyed in a crash. If your equation ignores that loss, how can the result mean anything?",
+  opts:[
+   {t:"Momentum is conserved in the collision even though kinetic energy is not \u2014 that is exactly why momentum is used for the impact and energy for the slide.",ok:true},
+   {t:"Energy is conserved in every collision, so no loss occurs."},
+   {t:"The energy lost is small enough to ignore at these speeds."},
+   {t:"Momentum and kinetic energy are always conserved together."}],
+  why:"The lawyer is conflating two conservation laws. Momentum holds in any collision with no external horizontal force; kinetic energy does not. Each was applied to the phase where it is valid."},
+ {q:"A witness saw my client\u2019s lane blocked. She stated plainly that the sedan pulled out in front of him. Are you calling her a liar?",
+  opts:[
+   {t:"No \u2014 but the sedan left no skid marks and the signal had been red for 34 seconds, so the physical evidence shows it was stationary.",ok:true},
+   {t:"Witness statements are never admissible in a reconstruction."},
+   {t:"Even if the sedan pulled out, the SUV would still have crashed."},
+   {t:"She was on the east corner and could not have seen the intersection."}],
+  why:"You don\u2019t attack the witness \u2014 you weigh her account against measurements. No skid marks plus a 34-second red light is physical evidence that the sedan was not moving."}
+];
+}
+
+/* ===== scene diagram ===== */
+function drawScene(hot){
+  var h=hot||"";function cls(k){return h===k?"hot":"";}
+  var camVisible=S.stage>=4;
+  return '<svg viewBox="0 0 700 235" role="img" aria-label="Side view of the collision scene: a '+n1(D_SKID)+' metre skid, the impact point, and a '+n1(D_SLIDE)+' metre post-impact slide.">'+
+  '<defs>'+
+  '<linearGradient id="scn-sky" x1="0" y1="0" x2="0" y2="1">'+
+  '<stop offset="0" stop-color="#0d1117"/><stop offset=".6" stop-color="#141a22"/>'+
+  '<stop offset=".82" stop-color="#241d12"/><stop offset="1" stop-color="#2e2312"/></linearGradient>'+
+  '<linearGradient id="scn-road" x1="0" y1="0" x2="0" y2="1">'+
+  '<stop offset="0" stop-color="#20262f"/><stop offset="1" stop-color="#151a21"/></linearGradient>'+
+  '<radialGradient id="scn-sun" cx=".5" cy=".5" r=".5">'+
+  '<stop offset="0" stop-color="#e8a33d" stop-opacity=".3"/><stop offset="1" stop-color="#e8a33d" stop-opacity="0"/></radialGradient>'+
+  '</defs>'+
+  '<rect width="700" height="235" fill="url(#scn-sky)"/>'+
+  '<ellipse cx="540" cy="178" rx="290" ry="110" fill="url(#scn-sun)"/>'+
+  '<rect x="0" y="168" width="700" height="67" fill="url(#scn-road)"/>'+
+  '<line x1="0" y1="168" x2="700" y2="168" stroke="#39434f"/>'+
+  // signal
+  '<line x1="622" y1="168" x2="622" y2="58" stroke="#39434f" stroke-width="4"/>'+
+  '<rect x="611" y="42" width="22" height="50" rx="6" fill="#1b212a" stroke="#39434f"/>'+
+  '<circle cx="622" cy="55" r="5.5" fill="#ff5d52"/>'+
+  '<circle cx="622" cy="68" r="4.5" fill="#2a323c"/><circle cx="622" cy="80" r="4.5" fill="#2a323c"/>'+
+  '<text x="600" y="38" text-anchor="end" class="dim-txt">signal red</text>'+
+  // skid marks + bracket
+  '<g class="'+cls("skid")+'">'+
+  '<line class="skid" x1="200" y1="174" x2="452" y2="174" stroke="#0a0c0f" stroke-width="5" stroke-linecap="round"/>'+
+  '<line class="skid" x1="200" y1="180" x2="452" y2="180" stroke="#0a0c0f" stroke-width="4" stroke-linecap="round" opacity=".8"/>'+
+  '<line class="dim" x1="200" y1="216" x2="452" y2="216"/>'+
+  '<line class="dim" x1="200" y1="210" x2="200" y2="222"/>'+
+  '<line class="dim" x1="452" y1="210" x2="452" y2="222"/>'+
+  '<text x="326" y="231" text-anchor="middle" class="dim-txt">'+n1(D_SKID)+' m braking</text>'+
+  '</g>'+
+  // SUV, side view
+  '<rect x="128" y="128" width="76" height="26" rx="7" fill="#9aa4b0"/>'+
+  '<path d="M139 130 q4 -15 18 -15 h32 q13 0 17 15 z" fill="#87919e"/>'+
+  '<path d="M144 128 q4 -11 15 -11 h9 v11 z" fill="#3a444f"/>'+
+  '<path d="M173 117 h15 q10 0 14 11 h-29 z" fill="#3a444f"/>'+
+  '<circle cx="144" cy="158" r="10" fill="#10141a"/><circle cx="144" cy="158" r="4" fill="#4a5460"/>'+
+  '<circle cx="189" cy="158" r="10" fill="#10141a"/><circle cx="189" cy="158" r="4" fill="#4a5460"/>'+
+  '<text x="166" y="104" text-anchor="middle" class="dim-txt">SUV '+M_SUV+' kg</text>'+
+  // impact
+  '<path d="M452 146 l13 -9 l-3 9 l13 -6 l-6 9 l12 0 l-12 6 l6 8 l-13 -5 l3 9 l-13 -10 l-10 8 l2 -9 l-11 4 l6 -8 l-10 -2 l10 -4 l-5 -8 l11 5 l-1 -10 z" fill="#e8a33d" opacity=".9"/>'+
+  // sedan, side view
+  '<rect x="470" y="136" width="60" height="19" rx="6" fill="#4f6d8c"/>'+
+  '<path d="M481 138 q3 -12 13 -12 h17 q9 0 12 12 z" fill="#42597a"/>'+
+  '<circle cx="483" cy="158" r="9" fill="#10141a"/><circle cx="483" cy="158" r="3.5" fill="#39434f"/>'+
+  '<circle cx="518" cy="158" r="9" fill="#10141a"/><circle cx="518" cy="158" r="3.5" fill="#39434f"/>'+
+  '<text x="500" y="115" text-anchor="middle" class="dim-txt">sedan '+M_SEDAN+' kg</text>'+
+  // slide bracket, above
+  '<g class="'+cls("slide")+'">'+
+  '<line class="dim" x1="470" y1="70" x2="592" y2="70"/>'+
+  '<line class="dim" x1="470" y1="64" x2="470" y2="76"/>'+
+  '<line class="dim" x1="592" y1="64" x2="592" y2="76"/>'+
+  '<text x="531" y="58" text-anchor="middle" class="dim-txt">'+n1(D_SLIDE)+' m slide</text>'+
+  '</g>'+
+  // camera span
+  (camVisible?
+  '<g class="'+cls("cam")+'">'+
+  '<line x1="30" y1="46" x2="30" y2="168" stroke="#39434f" stroke-width="3"/><circle cx="30" cy="42" r="4" fill="#8593a3"/>'+
+  '<line x1="152" y1="46" x2="152" y2="168" stroke="#39434f" stroke-width="3"/><circle cx="152" cy="42" r="4" fill="#8593a3"/>'+
+  '<line class="dim" x1="30" y1="216" x2="152" y2="216"/>'+
+  '<line class="dim" x1="30" y1="210" x2="30" y2="222"/>'+
+  '<line class="dim" x1="152" y1="210" x2="152" y2="222"/>'+
+  '<text x="91" y="231" text-anchor="middle" class="dim-txt">'+n1(CAM_D)+' m / '+CAM_T.toFixed(2)+' s</text>'+
+  '</g>'
+  :'<text x="91" y="231" text-anchor="middle" class="dim-txt" opacity=".45">camera span sealed</text>')+
+  '</svg>';
+}
+
+/* ===== helpers ===== */
+function $(i){return document.getElementById(i);}
+function near(v,t){return Math.abs(v-t)<=Math.abs(t)*0.03;}
+function fmt(n,d){return Number(n).toFixed(d===undefined?2:d);}
+function esc(s){return String(s||"").replace(/[&<>]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;"}[c];});}
+
+/* ===== credibility ===== */
+function drawCred(){
+  var f=$("credfill");
+  f.style.width=Math.max(0,S.cred)+"%";
+  f.className="credfill"+(S.cred<40?" low":S.cred<70?" mid":"");
+  $("crednum").textContent=Math.max(0,S.cred);
+}
+function hitCred(n){
+  S.cred=Math.max(0,S.cred-n);
+  drawCred();
+  var b=$("credbar");b.classList.remove("shake");void b.offsetWidth;b.classList.add("shake");
+  SFX.credloss();save();
+}
+
+/* ===== evidence ===== */
+function renderEv(){
+  var out="";
+  EV.forEach(function(e){
+    var av=evAvailable(e);
+    out+='<button class="ev '+(S.seen[e.id]?"seen ":"")+(av?"":"sealed ")+'" data-ev="'+e.id+'"'+(av?"":' aria-disabled="true"')+'>'+
+      '<span class="tag">'+e.tag+(!av?" \u00b7 sealed":S.seen[e.id]?" \u00b7 examined":"")+'</span>'+
+      '<span class="nm">'+e.nm+'</span><span class="hint">'+e.hint+'</span></button>';
+  });
+  $("ev-grid").innerHTML=out;
+  $("ev-count").textContent=Object.keys(S.seen).length+" of 7 examined";
+  Array.prototype.forEach.call($("ev-grid").querySelectorAll(".ev"),function(b){
+    b.addEventListener("click",function(){
+      var id=b.getAttribute("data-ev");
+      var e=EV.filter(function(x){return x.id===id;})[0];
+      if(!evAvailable(e)){SFX.wrong();
+        $("ev-detail").innerHTML='<div class="sheet"><span class="tag">'+e.tag+'</span><h3>Sealed</h3>'+
+        '<p>The traffic authority will release this footage once you have filed a reconstructed speed. Finish the four calculations first.</p></div>';return;}
+      openEv(id);
+    });
+  });
+}
+function openEv(id){
+  var e=EV.filter(function(x){return x.id===id;})[0];if(!e)return;
+  SFX.open();
+  if(!S.seen[id]){S.seen[id]=true;save();renderEv();}
+  $("scene").innerHTML=drawScene(e.hot);
+  var rows=e.rows.map(function(r){return '<div class="datarow"><span>'+r[0]+'</span><span class="v">'+r[1]+'</span></div>';}).join("");
+  var extra=(e.id==="cam")?camViewerHTML():"";
+  $("ev-detail").innerHTML='<div class="sheet"><span class="tag">'+e.tag+'</span><h3>'+e.nm+'</h3>'+rows+'<p>'+e.note+'</p>'+extra+'</div>';
+  if(e.id==="cam")wireCam();
+  if(S.phase==="invest"&&S.stage>=stages().length)renderCites();
+  $("ev-detail").scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+
+/* ===== stages ===== */
+function renderStages(){
+  var list=stages(),out="";
+  list.forEach(function(st,i){
+    var state=i<S.stage?"done":(i===S.stage?"active":"locked");
+    out+='<div class="stage '+state+'"><div class="stage-top"><span class="n">Step '+(i+1)+'</span><h3>'+st.t+'</h3></div>';
+    if(state==="locked"){out+='<p class="q" style="color:var(--steel)">Complete the previous step to unlock.</p></div>';}
+    else if(state==="done"){var a=S.ans[st.id];
+      out+='<p class="solved">'+fmt(a.v)+' '+st.unit+(a.att>1?'  \u00b7 '+a.att+' attempts':'')+(a.assisted?'  \u00b7 assisted':'')+'</p></div>';}
+    else{out+='<p class="q">'+st.q+'</p><div class="answer"><input type="text" inputmode="decimal" id="in-'+st.id+
+      '" aria-label="Your answer in '+st.unit+'" autocomplete="off"><span class="unit">'+st.unit+
+      '</span><button class="cta" style="margin:0;padding:10px 20px" id="go-'+st.id+'">Check</button></div>'+
+      '<div class="feedback" id="fb-'+st.id+'"></div></div>';}
+  });
+  $("stages").innerHTML=out;
+  if(S.stage<list.length){
+    var st=list[S.stage];
+    $("go-"+st.id).addEventListener("click",function(){check(st);});
+    $("in-"+st.id).addEventListener("keydown",function(e){if(e.key==="Enter")check(st);});
+    var r=S.att[st.id];if(r&&r.msg)$("fb-"+st.id).innerHTML=r.msg;
+  }else if(S.phase==="invest"){
+    $("verdict-wrap").classList.remove("hide");renderChoices();renderCites();
+  }
+}
+
+function check(st){
+  var fb=$("fb-"+st.id),raw=($("in-"+st.id).value||"").trim().replace(/,/g,"."),v=parseFloat(raw);
+  if(!raw||isNaN(v)){fb.innerHTML='<span class="mk f-no">\u2715</span><span class="f-no">Enter a number. Decimal point, no units in the box.</span>';SFX.wrong();return;}
+  var rec=S.att[st.id]||{n:0};rec.n++;S.att[st.id]=rec;
+  var okDry=near(v,st.dry),okWet=near(v,st.wet);
+  if(okDry||okWet){
+    SFX.right();
+    if(okWet&&!okDry&&!S.mu)S.mu=(COND==="wet"?"dry":"wet"); if(okDry&&!S.mu)S.mu=COND;
+    S.ans[st.id]={v:v,att:rec.n,assisted:false,path:okDry?"correct":"other"};
+    if(okWet&&!okDry){fb.innerHTML='<span class="mk f-hint">!</span><span class="f-hint">Your arithmetic is right, but you have used the '+(COND==="wet"?"dry":"wet")+'-surface coefficient. Re-read the weather log \u2014 and check this against the camera when it is released.</span>';}
+    var was=S.stage;S.stage++;save();
+    var wasFourth=(was===3);
+    setTimeout(function(){
+      SFX.unlock();
+      if(wasFourth){revealCamera();}
+      $("scene").innerHTML=drawScene(null);
+      renderEv();renderStages();syncReplay();scrollStage();
+    },okWet&&!okDry?1500:520);
+    return;
+  }
+  SFX.wrong();hitCred(6);
+  var msg;
+  if(rec.n>=6){
+    S.ans[st.id]={v:st.dry,att:rec.n,assisted:true,path:"correct"};
+    if(!S.mu)S.mu=COND;
+    var wasA=S.stage;hitCred(10);S.stage++;save();
+    fb.innerHTML='<span class="mk f-hint">\u2192</span><span class="f-hint">Value supplied so you can continue. Marked as assisted on your report \u2014 revisit this one with your teacher.</span>';
+    setTimeout(function(){
+      if(wasA===3)revealCamera();
+      $("scene").innerHTML=drawScene(null);
+      renderEv();renderStages();syncReplay();scrollStage();
+    },1800);return;
+  }
+  if(rec.n>=4){msg='<span class="mk f-hint">?</span><span class="f-hint">'+st.h2+'</span>';SFX.hint();}
+  else if(rec.n>=2){msg='<span class="mk f-hint">?</span><span class="f-hint">'+st.h1+'</span>';SFX.hint();}
+  else msg='<span class="mk f-no">\u2715</span><span class="f-no">Not that value. Check which measurement each symbol refers to, then try again.</span>';
+  fb.innerHTML=msg;rec.msg=msg;save();
+}
+function revealCamera(){
+  SFX.reveal();
+  $("flash").innerHTML='<div class="newsflash"><span class="t">EVIDENCE RELEASED</span>'+
+    '<p>The traffic authority has released the camera footage. It is an independent measurement of the SUV\u2019s speed \u2014 open Item 07 and time the crossing yourself, then replay the collision below the reconstruction to see whether the footage agrees with your figure.</p></div>';
+  setTimeout(function(){
+    var c=$("ev-grid").querySelector('[data-ev="cam"]');
+    if(c){c.classList.add("justin");c.scrollIntoView({behavior:"smooth",block:"center"});}
+  },400);
+}
+function scrollStage(){
+  var el=document.querySelector(".stage.active");
+  if(el)el.scrollIntoView({behavior:"smooth",block:"center"});
+}
+
+/* ===== verdict ===== */
+function renderChoices(){
+  var out="";
+  CHOICES.forEach(function(c){out+='<button class="choice" data-c="'+c.id+'" aria-pressed="'+(S.verdict===c.id)+'">'+c.t+'</button>';});
+  $("choices").innerHTML=out;
+  Array.prototype.forEach.call($("choices").querySelectorAll(".choice"),function(b){
+    b.addEventListener("click",function(){S.verdict=b.getAttribute("data-c");SFX.click();save();renderChoices();});
+  });
+  gate();
+}
+
+/* ===== evidence citation ===== */
+/* Load-bearing for "he was speeding at 89 km/h": skid length, the friction
+   choice, the post-impact slide, the masses, and the independent camera.
+   The witness statement is a red herring \u2014 citing it is a reasoning error. */
+var CITE_KEY={skid:true,road:true,wx:true,post:true,reg:true,cam:true,wit:false};
+function renderCites(){
+  if(!S.cites)S.cites={};
+  var out="";
+  EV.forEach(function(e){
+    if(!S.seen[e.id])return;
+    out+='<button class="choice" data-ci="'+e.id+'" aria-pressed="'+(!!S.cites[e.id])+'">'+e.tag+' \u00b7 '+e.nm+'</button>';
+  });
+  if(!out)out='<p class="count">Nothing to select yet \u2014 scroll up and open the evidence items, then come back here.</p>';
+  $("cites").innerHTML=out;
+  Array.prototype.forEach.call($("cites").querySelectorAll(".choice"),function(b){
+    b.addEventListener("click",function(){
+      var id=b.getAttribute("data-ci");
+      S.cites[id]=!S.cites[id];SFX.click();save();renderCites();
+    });
+  });
+  var n=Object.keys(S.cites).filter(function(k){return S.cites[k];}).length;
+  $("citec").textContent=n+(n===1?" item selected":" items selected")+(n<2?" \u2014 select at least 2":"");
+  gate();
+}
+function citeScore(){
+  var got=0,missed=0,wrong=0;
+  EV.forEach(function(e){
+    var picked=!!(S.cites&&S.cites[e.id]);
+    if(CITE_KEY[e.id]){ if(picked)got++; else missed++; }
+    else if(picked) wrong++;
+  });
+  return {got:got,missed:missed,wrong:wrong};
+}
+function citeCount(){return S.cites?Object.keys(S.cites).filter(function(k){return S.cites[k];}).length:0;}
+
+function words(t){return (t.trim().match(/\S+/g)||[]).length;}
+function gate(){
+  var n=words($("just").value);
+  $("wc").textContent=n+(n===1?" word":" words")+(n<40?" \u2014 at least 40 needed":" \u2014 ready to file");
+  $("submit-v").disabled=!(S.verdict&&n>=40&&citeCount()>=2);
+}
+
+/* ===== cross-examination ===== */
+function startX(){
+  var cs=citeScore();
+  if(cs.wrong)hitCred(8);
+  if(cs.missed)hitCred(4*cs.missed);
+  S.phase="xexam";
+  var ch=CHOICES.filter(function(c){return c.id===S.verdict;})[0];
+  if(!ch||!ch.correct)hitCred(15);
+  $("verdict-wrap").classList.add("hide");
+  $("xexam-wrap").classList.remove("hide");
+  save();renderX();
+  $("xexam-wrap").scrollIntoView({behavior:"smooth",block:"start"});
+}
+function renderX(){
+  if(S.x>=XQ.length){finish();return;}
+  var q=XQ[S.x];
+  $("xprog").textContent="Question "+(S.x+1)+" of "+XQ.length;
+  var out='<div class="lawyer"><span class="who">COUNSEL FOR THE DEFENCE</span><p>\u201c'+q.q+'\u201d</p></div>';
+  q.opts.forEach(function(o,i){out+='<button class="choice" data-i="'+i+'">'+o.t+'</button>';});
+  out+='<div class="feedback" id="xfb"></div>';
+  $("xbox").innerHTML=out;
+  SFX.objection();
+  Array.prototype.forEach.call($("xbox").querySelectorAll(".choice"),function(b){
+    b.addEventListener("click",function(){answerX(parseInt(b.getAttribute("data-i"),10));});
+  });
+}
+function answerX(i){
+  var q=XQ[S.x],ok=!!q.opts[i].ok;
+  var btns=$("xbox").querySelectorAll(".choice");
+  Array.prototype.forEach.call(btns,function(b,j){
+    b.disabled=true;
+    if(q.opts[j].ok)b.classList.add("ok");
+    else if(j===i)b.classList.add("bad");
+  });
+  S.xres[S.x]=ok;
+  if(ok){SFX.right();$("xfb").innerHTML='<span class="mk f-ok">\u2713</span><span class="f-ok">Objection overruled. '+q.why+'</span>';}
+  else{SFX.wrong();hitCred(12);$("xfb").innerHTML='<span class="mk f-no">\u2715</span><span class="f-no">The lawyer keeps the point. '+q.why+'</span>';}
+  save();
+  setTimeout(function(){S.x++;save();renderX();
+    if(S.x<XQ.length)$("xexam-wrap").scrollIntoView({behavior:"smooth",block:"start"});},3400);
+}
+
+/* ===== scoring ===== */
+function scoreCase(){
+  var list=stages(),pts=0,max=0;
+  list.forEach(function(st){
+    max+=20;var a=S.ans[st.id];if(!a)return;
+    if(a.assisted)pts+=4;
+    else pts+=Math.max(6,20-(a.att-1)*4);
+  });
+  max+=30;pts+=Math.min(30,Object.keys(S.seen).length*4);
+  max+=25;var ch=CHOICES.filter(function(c){return c.id===S.verdict;})[0];
+  if(ch&&ch.correct)pts+=25;
+  var cs=citeScore();max+=25;
+  pts+=Math.max(0,Math.round(cs.got/6*25)-cs.wrong*10);
+  max+=XQ.length*15;
+  S.xres.forEach(function(r){if(r)pts+=15;});
+  var pct=Math.round(pts/max*100);
+  var rank = pct>=90?"Expert Witness":pct>=75?"Lead Reconstructionist":pct>=60?"Field Investigator":pct>=40?"Junior Analyst":"Case Referred for Review";
+  return {pts:pts,max:max,pct:pct,rank:rank};
+}
+
+/* ===== report ===== */
+function finish(){
+  S.phase="done";S.done=true;save();
+  buildReport();show("s-report");
+  SFX.final();setTimeout(SFX.stamp,420);
+}
+function buildReport(){
+  var list=stages(),rows="",sc=scoreCase();
+  list.forEach(function(st,i){
+    var a=S.ans[st.id]||{v:0,att:0};
+    rows+='<div class="rrow"><span>'+(i+1)+'. '+st.t+'</span><span><span class="val">'+fmt(a.v)+' '+st.unit+
+      '</span> <span class="att">'+(a.att||1)+(a.att===1?" attempt":" attempts")+(a.assisted?", assisted":"")+'</span></span></div>';
+  });
+  var v0=S.ans.v0?S.ans.v0.v:0;
+  var ch=CHOICES.filter(function(c){return c.id===S.verdict;})[0];
+  var xr=S.xres.filter(function(r){return r;}).length;
+  var cs=citeScore();
+  var citedNames=EV.filter(function(e){return S.cites&&S.cites[e.id];}).map(function(e){return e.tag+' '+e.nm;}).join(', ');
+  var muL=(S.mu==="wet"?"\u03bc = 0.40 (wet)":"\u03bc = 0.75 (dry)")+(S.mu===COND?"":" \u2014 incorrect for this case");
+  $("report").innerHTML=
+   '<div class="rankbox stamp"><div class="sc">'+sc.pct+'</div><div class="rk">'+sc.rank+'</div>'+
+   '<div class="of">'+sc.pts+' of '+sc.max+' points \u00b7 credibility '+Math.max(0,S.cred)+'/100</div></div>'+
+   '<h2>Physics Evidence Report</h2>'+
+   '<p class="rmeta">Case 1 \u00b7 The Intersection Collision \u00b7 '+new Date().toLocaleDateString()+'</p>'+
+   '<div class="rrow"><span>Investigator</span><span class="val">'+esc(S.team)+'</span></div>'+
+   '<div class="rrow"><span>Friction coefficient used</span><span class="val">'+muL+'</span></div>'+
+   '<div class="rrow"><span>Evidence examined</span><span class="val">'+Object.keys(S.seen).length+' of 7</span></div>'+
+   '<div class="rrow"><span>Cross-examination</span><span class="val">'+xr+' of '+XQ.length+' held</span></div>'+
+   '<div class="rrow"><span>Evidence cited in support</span><span class="val">'+cs.got+' of 6 relevant'+(cs.wrong?', '+cs.wrong+' not probative':'')+'</span></div>'+
+   '<div class="rblock"><h3>Reconstruction</h3></div>'+rows+
+   '<div class="rrow"><span>Speed before braking</span><span class="val">'+fmt(v0,1)+' km/h in a '+LIMIT+' km/h zone</span></div>'+
+   '<div class="rrow"><span>Independent check \u2014 traffic camera</span><span class="val">'+fmt(CAM_V)+' m/s</span></div>'+
+   '<div class="rblock"><h3>Evidence cited</h3><div class="body">'+esc(citedNames||"none")+
+     (cs.wrong?'\n\nNote: the witness statement is not probative here. It is contradicted by the absence of sedan skid marks and a signal that had been red for 34 s.':'')+
+     (S.cites&&!S.cites.wx?'\n\nNote: the weather log was not cited. It is what establishes which friction coefficient applies, so the whole reconstruction rests on it.':'')+
+     (S.cites&&!S.cites.cam?'\n\nNote: the traffic camera was not cited. It is the only measurement independent of the friction assumption, and it is the strongest support available for this claim.':'')+
+     '</div></div>'+
+   '<div class="rblock"><h3>Case parameters</h3><div class="body">skid '+n1(D_SKID)+' m \u00b7 slide '+n1(D_SLIDE)+' m \u00b7 SUV '+M_SUV+' kg \u00b7 sedan '+M_SEDAN+' kg \u00b7 camera span '+n1(CAM_D)+' m \u00b7 limit '+LIMIT+' km/h \u00b7 seed \u201c'+esc(S.seed||S.team)+'\u201d</div></div>'+
+   '<div class="rblock"><h3>Conclusion</h3><div class="body">'+(ch?esc(ch.t):"")+'</div></div>'+
+   '<div class="rblock"><h3>Justification</h3><div class="body">'+esc(S.just)+'</div></div>';
+}
+function reportText(){
+  var list=stages(),L=[],sc=scoreCase();
+  L.push("PHYSICS EVIDENCE REPORT");
+  L.push("Case 1 - The Intersection Collision");
+  L.push("Investigator: "+S.team);
+  L.push("Date: "+new Date().toLocaleDateString());
+  L.push("Score: "+sc.pts+"/"+sc.max+" ("+sc.pct+"%)  Rank: "+sc.rank);
+  L.push("Credibility: "+Math.max(0,S.cred)+"/100");
+  L.push("Friction coefficient used: "+(S.mu==="wet"?"0.40 (wet)":"0.75 (dry)")+(S.mu===COND?" (correct)":" (INCORRECT for this case)"));
+  L.push("Actual road condition: "+COND);
+  L.push("Evidence examined: "+Object.keys(S.seen).length+" of 7");
+  L.push("Cross-examination held: "+S.xres.filter(function(r){return r;}).length+" of "+XQ.length);
+  var cs2=citeScore();
+  L.push("Evidence cited: "+cs2.got+" of 6 relevant"+(cs2.wrong?", "+cs2.wrong+" not probative":""));
+  L.push("  Items: "+(EV.filter(function(e){return S.cites&&S.cites[e.id];}).map(function(e){return e.nm;}).join(", ")||"none"));
+  L.push("Case seed: "+(S.seed||S.team));
+  L.push("Parameters: skid "+n1(D_SKID)+" m, slide "+n1(D_SLIDE)+" m, SUV "+M_SUV+" kg, sedan "+M_SEDAN+" kg, span "+n1(CAM_D)+" m, limit "+LIMIT+" km/h");
+  L.push("");L.push("RECONSTRUCTION");
+  list.forEach(function(st,i){var a=S.ans[st.id]||{v:0,att:0};
+    L.push("  "+(i+1)+". "+st.t+": "+fmt(a.v)+" "+st.unit+"  ["+(a.att||1)+" attempts"+(a.assisted?", assisted":"")+"]");});
+  var v0=S.ans.v0?S.ans.v0.v:0;
+  L.push("  Speed before braking: "+fmt(v0,1)+" km/h in a "+LIMIT+" km/h zone");
+  L.push("  Camera cross-check: "+fmt(CAM_V)+" m/s");
+  L.push("");var ch=CHOICES.filter(function(c){return c.id===S.verdict;})[0];
+  L.push("CONCLUSION");L.push("  "+(ch?ch.t:""));
+  L.push("");L.push("JUSTIFICATION");L.push(S.just);
+  return L.join("\n");
+}
+
+/* ===== camera footage: frame scrubber ===== */
+var CAM_FPS=60,CAM_F1=12,CAM_F2=75,CAM_FMAX=90;
+function pad(n){n=String(n);while(n.length<3)n="0"+n;return n;}
+function camSVG(f){
+  var t=(f-CAM_F1)/CAM_FPS, front=80+(500/CAM_D)*CAM_V*t;
+  return '<svg viewBox="0 0 700 150" role="img" aria-label="Traffic camera footage, frame '+f+'">'+
+  '<rect width="700" height="150" fill="#0c0f13"/><rect x="0" y="60" width="700" height="60" fill="#161b22"/>'+
+  '<line x1="0" y1="90" x2="700" y2="90" stroke="#2a323c" stroke-dasharray="14 12"/>'+
+  '<line x1="80" y1="30" x2="80" y2="120" stroke="#8593a3" stroke-width="2"/><circle cx="80" cy="26" r="5" fill="#e8a33d"/>'+
+  '<line x1="580" y1="30" x2="580" y2="120" stroke="#8593a3" stroke-width="2"/><circle cx="580" cy="26" r="5" fill="#e8a33d"/>'+
+  '<text x="80" y="140" text-anchor="middle" class="dim-txt">post 1</text>'+
+  '<text x="580" y="140" text-anchor="middle" class="dim-txt">post 2 \u00b7 '+n1(CAM_D)+' m from post 1</text>'+
+  '<g transform="translate('+(front-100)+',0)"><rect x="0" y="68" width="100" height="44" rx="6" fill="#7d8896"/>'+
+  '<rect x="18" y="74" width="26" height="32" rx="3" fill="#5c6773"/>'+
+  '<line x1="100" y1="58" x2="100" y2="122" stroke="#e8a33d" stroke-width="1.5" stroke-dasharray="3 3"/></g>'+
+  '<circle cx="18" cy="18" r="5" fill="#d1544b"/><text x="30" y="22" class="dim-txt" fill="#e9e7e2">REC  07:42:13</text>'+
+  '<text x="685" y="22" text-anchor="end" class="dim-txt" fill="#e9e7e2">frame '+pad(f)+'  \u00b7  60 fps</text></svg>';
+}
+function camViewerHTML(){
+  return '<div class="cam-view" id="cam-view">'+camSVG(0)+'</div>'+
+  '<div class="cam-ctl"><button class="iconbtn" id="cf-prev">\u25c0 frame</button>'+
+  '<input type="range" id="cf" min="0" max="'+CAM_FMAX+'" value="0" aria-label="Scrub through frames">'+
+  '<button class="iconbtn" id="cf-next">frame \u25b6</button><span class="rp-read" id="cf-num">frame 000</span></div>'+
+  '<p style="margin:14px 0 8px;color:var(--steel);font-size:14.5px;max-width:62ch">The dashed line marks the SUV\u2019s front bumper. Step through until it sits on post 1 and note the frame, then do the same for post 2. How many frames does the crossing take?</p>'+
+  '<div class="answer"><input type="text" inputmode="numeric" id="cf-in" aria-label="Frames between the posts" autocomplete="off" style="width:120px">'+
+  '<span class="unit">frames</span><button class="cta" style="margin:0;padding:10px 20px" id="cf-go">Check</button></div>'+
+  '<div class="feedback" id="cf-fb"></div>';
+}
+function camOK(){var fr=CAM_F2-CAM_F1;return '<span class="mk f-ok">\u2713</span><span class="f-ok">'+fr+' frames \u00f7 60 fps = '+CAM_T.toFixed(2)+' s. Over '+n1(CAM_D)+' m that is '+n1(CAM_V)+' m/s, or '+Math.round(CAM_V*3.6)+' km/h \u2014 before the driver ever touched the brakes. Compare that with your step 4 answer.</span>';}
+function wireCam(){
+  var r=$("cf");
+  function setF(f){f=Math.max(0,Math.min(CAM_FMAX,f));r.value=f;$("cam-view").innerHTML=camSVG(f);$("cf-num").textContent="frame "+pad(f);}
+  r.addEventListener("input",function(){setF(parseInt(r.value,10));tone(1400,0.018,"square",0.012);});
+  $("cf-prev").addEventListener("click",function(){setF(parseInt(r.value,10)-1);SFX.click();});
+  $("cf-next").addEventListener("click",function(){setF(parseInt(r.value,10)+1);SFX.click();});
+  function go(){
+    var n=parseInt(($("cf-in").value||"").trim(),10);
+    if(isNaN(n)){$("cf-fb").innerHTML='<span class="mk f-no">\u2715</span><span class="f-no">Enter a whole number of frames.</span>';SFX.wrong();return;}
+    if(Math.abs(n-(CAM_F2-CAM_F1))<=1){S.camDone=true;save();SFX.right();$("cf-fb").innerHTML=camOK();}
+    else{SFX.wrong();$("cf-fb").innerHTML='<span class="mk f-no">\u2715</span><span class="f-no">Not quite. Use the frame buttons for precision \u2014 the bumper line should sit exactly on each post when you read the counter.</span>';}
+  }
+  $("cf-go").addEventListener("click",go);
+  $("cf-in").addEventListener("keydown",function(e){if(e.key==="Enter")go();});
+  if(S.camDone)$("cf-fb").innerHTML=camOK();
+}
+
+/* ===== engine sound (continuous, speed-tracked) ===== */
+var eng=null;
+function engineStart(){
+  if(!soundOn)return;var c=ctx();if(!c)return;
+  var o=c.createOscillator(),g=c.createGain(),f=c.createBiquadFilter();
+  o.type="sawtooth";f.type="lowpass";f.frequency.value=520;g.gain.value=0.03;
+  o.connect(f);f.connect(g);g.connect(c.destination);o.start();eng={o:o,g:g};
+}
+function engineSet(v){if(eng&&ac)eng.o.frequency.setTargetAtTime(48+v*4.4,ac.currentTime,0.05);}
+function engineStop(){
+  if(!eng)return;var e=eng;eng=null;
+  try{e.g.gain.setTargetAtTime(0.0001,ac.currentTime,0.08);setTimeout(function(){try{e.o.stop();}catch(x){}},350);}catch(x){}
+}
+
+/* ===== crash replay, driven by the student's path ===== */
+var RP={PX:9.5,X0:20,rate:1,run:false};
+function rpScale(){var span=CAM_D+D_SKID+D_SLIDE+14;RP.PX=660/span;}
+function rpPx(m){return RP.X0+m*RP.PX;}
+function rpModel(){
+  rpScale();
+  var k=(S.mu==="wet")?WET:DRY, xs=-6, brake=CAM_D+8, imp=CAM_D+8+D_SKID;
+  var t1=(brake-xs)/k.v0, t2=(k.v0-k.vi)/k.a, t3=k.vp/k.a;
+  return {v0:k.v0,a:k.a,vi:k.vi,vp:k.vp,xs:xs,brake:brake,imp:imp,t1:t1,t2:t2,t3:t3,
+          dur:t1+t2+t3+0.7,tA:(0-xs)/k.v0,tB:(CAM_D-xs)/k.v0};
+}
+function rpState(m,t){
+  if(t<m.t1)return{x:m.xs+m.v0*t,v:m.v0,ph:0};
+  if(t<m.t1+m.t2){var u=t-m.t1;return{x:m.brake+m.v0*u-0.5*m.a*u*u,v:m.v0-m.a*u,ph:1};}
+  var w=Math.min(t-m.t1-m.t2,m.t3);return{x:m.imp+m.vp*w-0.5*m.a*w*w,v:Math.max(0,m.vp-m.a*w),ph:2};
+}
+function rpSVG(){
+  rpScale();
+  var brake=CAM_D+8,imp=brake+D_SKID,bp=rpPx(brake),i=rpPx(imp);
+  var pole=Math.min(664, i+42+D_SLIDE*RP.PX+16);
+  return '<svg viewBox="0 0 700 235" role="img" aria-label="Animated replay of the collision reconstructed from your calculated speed">'+
+  '<defs>'+
+  '<linearGradient id="rp-sky" x1="0" y1="0" x2="0" y2="1">'+
+  '<stop offset="0" stop-color="#0d1117"/><stop offset=".6" stop-color="#141a22"/>'+
+  '<stop offset=".82" stop-color="#241d12"/><stop offset="1" stop-color="#2e2312"/></linearGradient>'+
+  '<linearGradient id="rp-road" x1="0" y1="0" x2="0" y2="1">'+
+  '<stop offset="0" stop-color="#20262f"/><stop offset="1" stop-color="#151a21"/></linearGradient>'+
+  '<radialGradient id="rp-sun" cx=".5" cy=".5" r=".5">'+
+  '<stop offset="0" stop-color="#e8a33d" stop-opacity=".28"/><stop offset="1" stop-color="#e8a33d" stop-opacity="0"/></radialGradient>'+
+  '</defs>'+
+  '<rect width="700" height="235" fill="url(#rp-sky)"/>'+
+  '<ellipse cx="520" cy="180" rx="300" ry="110" fill="url(#rp-sun)"/>'+
+  '<rect x="0" y="168" width="700" height="67" fill="url(#rp-road)"/>'+
+  '<line x1="0" y1="168" x2="700" y2="168" stroke="#39434f"/>'+
+  // lamp posts marking the camera span
+  '<line x1="'+rpPx(0)+'" y1="46" x2="'+rpPx(0)+'" y2="168" stroke="#39434f" stroke-width="3"/>'+
+  '<circle cx="'+rpPx(0)+'" cy="42" r="4" fill="#8593a3"/>'+
+  '<line x1="'+rpPx(CAM_D)+'" y1="46" x2="'+rpPx(CAM_D)+'" y2="168" stroke="#39434f" stroke-width="3"/>'+
+  '<circle cx="'+rpPx(CAM_D)+'" cy="42" r="4" fill="#8593a3"/>'+
+  '<text x="'+rpPx(CAM_D/2)+'" y="30" text-anchor="middle" class="dim-txt">camera span '+n1(CAM_D)+' m</text>'+
+  '<text x="'+rpPx(brake+D_SKID/2)+'" y="30" text-anchor="middle" class="dim-txt">braking '+n1(D_SKID)+' m</text>'+
+  // signal
+  '<line x1="'+pole+'" y1="168" x2="'+pole+'" y2="60" stroke="#39434f" stroke-width="4"/>'+
+  '<rect x="'+(pole-11)+'" y="44" width="22" height="50" rx="6" fill="#1b212a" stroke="#39434f"/>'+
+  '<circle cx="'+pole+'" cy="57" r="5.5" fill="#ff5d52"/>'+
+  '<circle cx="'+pole+'" cy="70" r="4.5" fill="#2a323c"/><circle cx="'+pole+'" cy="82" r="4.5" fill="#2a323c"/>'+
+  // skid marks (grow during braking)
+  '<line id="rp-sk1" x1="'+bp+'" y1="174" x2="'+bp+'" y2="174" stroke="#0a0c0f" stroke-width="5" stroke-linecap="butt"/>'+
+  '<line id="rp-sk2" x1="'+bp+'" y1="180" x2="'+bp+'" y2="180" stroke="#0a0c0f" stroke-width="4" stroke-linecap="butt" opacity=".8"/>'+
+  // sedan, rear bumper at local x=0
+  '<g id="rp-sedan" transform="translate('+i+',0)">'+
+  '<rect x="0" y="140" width="42" height="16" rx="5" fill="#4f6d8c"/>'+
+  '<path d="M8 142 q2 -10 10 -10 h12 q7 0 9 10 z" fill="#42597a"/>'+
+  '<circle cx="9" cy="160" r="8" fill="#10141a"/><circle cx="9" cy="160" r="3" fill="#39434f"/>'+
+  '<circle cx="33" cy="160" r="8" fill="#10141a"/><circle cx="33" cy="160" r="3" fill="#39434f"/>'+
+  '</g>'+
+  // SUV, front bumper at local x=48
+  '<g id="rp-suv" transform="translate('+(rpPx(-6)-48)+',0)">'+
+  '<rect x="0" y="134" width="48" height="20" rx="6" fill="#9aa4b0"/>'+
+  '<path d="M7 136 q3 -12 12 -12 h20 q8 0 11 12 z" fill="#87919e"/>'+
+  '<path d="M10 134 q3 -9 10 -9 h6 v9 z" fill="#3a444f"/>'+
+  '<path d="M29 125 h9 q7 0 9 9 h-18 z" fill="#3a444f"/>'+
+  '<circle cx="11" cy="158" r="9" fill="#10141a"/><circle cx="11" cy="158" r="3.5" fill="#4a5460"/>'+
+  '<circle cx="37" cy="158" r="9" fill="#10141a"/><circle cx="37" cy="158" r="3.5" fill="#4a5460"/>'+
+  '<rect x="45" y="140" width="3" height="7" rx="1.5" fill="#e8d9a0" opacity=".85"/>'+
+  '</g>'+
+  '<g id="rp-burst" opacity="0"><path d="M'+i+' 146 l14 -9 l-3 9 l14 -6 l-6 9 l13 0 l-13 6 l6 8 l-14 -5 l3 9 l-14 -10 l-10 8 l2 -9 l-11 4 l6 -8 l-10 -2 l10 -4 l-5 -8 l11 5 l-1 -10 z" fill="#e8a33d"/></g>'+
+  '<text id="rp-t" x="690" y="226" text-anchor="end" class="dim-txt">t = 0.00 s</text></svg>';
+}
+function syncReplay(){
+  if(S.stage<4||$("replay").innerHTML)return;
+  $("replay").innerHTML=
+   '<div class="sect-head" style="margin-top:34px"><h2>Replay</h2><span class="note">Animated from your reconstructed speed'+(S.mu?' ('+S.mu+'-surface path)':'')+'.</span></div>'+
+   '<div class="scene" id="rp-scene">'+rpSVG()+'</div>'+
+   '<div class="rp-ctl"><button class="cta" style="margin:0;padding:10px 20px" id="rp-play">Replay the collision</button>'+
+   '<button class="ghost" id="rp-slow" aria-pressed="false">Slow motion</button>'+
+   '<span class="rp-read" id="rp-v">0 km/h</span><span class="rp-read" id="rp-cam">camera gap: \u2014</span></div>'+
+   '<p id="rp-note" style="margin:12px 0 0;font-size:14.5px;max-width:62ch"></p>';
+  $("rp-play").addEventListener("click",rpPlay);
+  $("rp-slow").addEventListener("click",function(){
+    var on=this.getAttribute("aria-pressed")!=="true";this.setAttribute("aria-pressed",on);RP.rate=on?0.3:1;SFX.click();});
+}
+function rpPlay(){
+  if(RP.run)return;
+  var m=rpModel(),thud=false,crossed=false,lastSkid=0;
+  RP.run=true;
+  $("rp-scene").innerHTML=rpSVG();$("rp-cam").textContent="camera gap: \u2014";$("rp-note").textContent="";
+  $("rp-play").disabled=true;SFX.click();engineStart();
+  var start=performance.now();
+  function frame(now){
+    var t=(now-start)/1000*RP.rate;
+    if(t>m.dur){rpEnd(m);return;}
+    var s=rpState(m,t);
+    $("rp-suv").setAttribute("transform","translate("+(rpPx(s.x)-48)+",0)");
+    if(s.ph===1){
+      $("rp-sk1").setAttribute("x2",rpPx(s.x));$("rp-sk2").setAttribute("x2",rpPx(s.x));
+      if(now-lastSkid>110){noise(0.14,0.05,2400);lastSkid=now;}
+    }
+    if(s.ph===2){
+      $("rp-sk1").setAttribute("x2",rpPx(m.imp));$("rp-sk2").setAttribute("x2",rpPx(m.imp));
+      $("rp-sedan").setAttribute("transform","translate("+rpPx(s.x)+",0)");
+      if(!thud){thud=true;noise(0.28,0.28,320);tone(64,0.35,"sine",0.16);
+        $("rp-burst").setAttribute("opacity","0.9");
+        setTimeout(function(){var b=$("rp-burst");if(b)b.setAttribute("opacity","0");},260);}
+    }
+    if(!crossed&&t>=m.tB){crossed=true;$("rp-cam").textContent="camera gap: "+(m.tB-m.tA).toFixed(2)+" s";}
+    $("rp-v").textContent=Math.round(s.v*3.6)+" km/h";
+    $("rp-t").textContent="t = "+t.toFixed(2)+" s";
+    engineSet(s.v);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+function rpEnd(m){
+  RP.run=false;engineStop();$("rp-play").disabled=false;$("rp-v").textContent="0 km/h";
+  var gap=m.tB-m.tA, ok=Math.abs(gap-CAM_T)/CAM_T<=0.10;
+  $("rp-note").innerHTML= ok
+   ? '<span class="f-ok">Your reconstruction crosses the camera span in '+gap.toFixed(2)+' s. The footage recorded '+CAM_T.toFixed(2)+' s. They agree \u2014 an independent measurement supports your number.</span>'
+   : '<span class="f-no">Your reconstruction crosses the camera span in '+gap.toFixed(2)+' s. The footage recorded '+CAM_T.toFixed(2)+' s. They do not agree. One of your assumptions is wrong \u2014 go back to the road survey.</span>';
+  if(ok)SFX.unlock();else SFX.credloss();
+}
+
+/* ===== nav ===== */
+function show(id){["s-title","s-invest","s-report"].forEach(function(s){$(s).classList.add("hide");});
+  $(id).classList.remove("hide");window.scrollTo(0,0);}
+
+/* ===== wiring ===== */
+$("team").addEventListener("input",function(){var ok=!!this.value.trim();$("open-case").disabled=!ok;$("mode-note").textContent=ok?"Four calculations, then cross-examination.":"Enter a name to begin.";});
+$("open-case").addEventListener("click",function(){
+  S.team=$("team").value.trim();S.seed=S.team;applyCase(S.seed);ctx();SFX.open();
+  $("bar-team").textContent=S.team;$("scene").innerHTML=drawScene(null);
+  drawCred();renderEv();renderStages();save();show("s-invest");});
+$("snd").addEventListener("click",function(){soundOn=!soundOn;this.textContent=soundOn?"Sound on":"Sound off";if(soundOn)SFX.click();});
+$("restart").addEventListener("click",function(){
+  if(!confirm("Clear all your work and start the case again?"))return;
+  clearSave();location.reload();});
+$("just").addEventListener("input",function(){S.just=this.value;save();gate();});
+$("submit-v").addEventListener("click",function(){S.just=$("just").value;save();startX();});
+$("back-inv").addEventListener("click",function(){show("s-invest");});
+$("print").addEventListener("click",function(){
+  var framed;try{framed=window.self!==window.top;}catch(e){framed=true;}
+  var ok=false;
+  if(!framed){try{window.print();ok=true;}catch(e){ok=false;}}
+  if(!ok){
+    var n=document.getElementById("printnote");
+    if(!n){n=document.createElement("p");n.id="printnote";n.className="count";
+      n.style.color="var(--red)";document.querySelector("#s-report .actions").appendChild(n);}
+    n.textContent="Printing is blocked in this preview. Use Download as text, or open the file directly in a browser and press Ctrl/Cmd + P.";
+  }
+});
+$("dl").addEventListener("click",function(){
+  var b=new Blob([reportText()],{type:"text/plain"}),a=document.createElement("a");
+  a.href=URL.createObjectURL(b);
+  a.download="evidence-report-"+(S.team.replace(/[^a-z0-9]+/gi,"-").toLowerCase()||"team")+".txt";
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  setTimeout(function(){URL.revokeObjectURL(a.href);},1500);});
+
+/* ===== resume ===== */
+(function(){
+  var r=load();if(!r||!r.team)return;
+  applyCase(r.seed||r.team);
+  if(r.fp!==caseFP()){clearSave();return;}      /* saved work belongs to a different case */
+  if(!confirm("Resume the case as "+r.team+"?")){clearSave();return;}
+  S=r;
+  $("bar-team").textContent=S.team;$("scene").innerHTML=drawScene(null);
+  drawCred();renderEv();renderStages();syncReplay();$("just").value=S.just||"";
+  if(S.phase==="invest"&&S.stage>=4)renderCites();
+  if(S.done){buildReport();show("s-report");}
+  else if(S.phase==="xexam"){$("verdict-wrap").classList.add("hide");$("xexam-wrap").classList.remove("hide");renderX();show("s-invest");}
+  else show("s-invest");
+})();
+
+})();
+</script>
+</body>
+</html>
